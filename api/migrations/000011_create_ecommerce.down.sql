@@ -1,0 +1,6 @@
+DROP TABLE IF EXISTS ulasan_produk;
+DROP TABLE IF EXISTS pembayaran_pesanan;
+DROP TABLE IF EXISTS pesanan_item;
+DROP TABLE IF EXISTS pesanan;
+DROP TABLE IF EXISTS produk;
+DROP TABLE IF EXISTS toko;

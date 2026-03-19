@@ -1,0 +1,42 @@
+# Go
+api/vendor/
+api/bin/
+api/*.exe
+api/*.test
+api/coverage.out
+api/coverage.html
+*.env
+.env.*
+*.env.*
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+*.lock
+!pubspec.lock
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Secrets
+*.pem
+*.key
+*.p12
+*.jks
+google-services.json
+GoogleService-Info.plist
+keystore.properties
+
+# Claude local settings
+.claude/settings.local.json

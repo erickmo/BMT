@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS kartu_nfc;
+DROP TABLE IF EXISTS nasabah;

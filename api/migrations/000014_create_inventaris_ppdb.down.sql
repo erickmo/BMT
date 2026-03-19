@@ -1,0 +1,9 @@
+DROP TABLE IF EXISTS alumni;
+DROP TABLE IF EXISTS kesehatan_kunjungan;
+DROP TABLE IF EXISTS kesehatan_santri;
+DROP TABLE IF EXISTS surat_izin;
+DROP TABLE IF EXISTS perpus_peminjaman;
+DROP TABLE IF EXISTS perpus_buku;
+DROP TABLE IF EXISTS ppdb_pendaftar;
+DROP TABLE IF EXISTS inventaris_peminjaman;
+DROP TABLE IF EXISTS inventaris_aset;

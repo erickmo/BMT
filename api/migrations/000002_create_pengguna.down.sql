@@ -1,0 +1,5 @@
+DROP TABLE IF EXISTS audit_log;
+DROP TABLE IF EXISTS otp_log;
+DROP TABLE IF EXISTS sesi_aktif;
+DROP TABLE IF EXISTS pengguna_pondok;
+DROP TABLE IF EXISTS pengguna;

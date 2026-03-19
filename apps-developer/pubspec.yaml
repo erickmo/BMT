@@ -1,0 +1,64 @@
+name: app_developer
+description: "BMT SaaS - Aplikasi Developer Platform"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State Management
+  flutter_bloc: ^9.1.0
+  equatable: ^2.0.7
+
+  # Network
+  dio: ^5.8.0+1
+  retrofit: ^4.4.2
+
+  # Storage
+  flutter_secure_storage: ^10.0.0
+  shared_preferences: ^2.3.5
+
+  # Navigation
+  go_router: ^17.1.0
+
+  # UI
+  cached_network_image: ^3.4.1
+  shimmer: ^3.0.0
+  flutter_svg: ^2.0.16
+  data_table_2: ^2.5.15
+  fl_chart: ^1.2.0
+
+  # DI
+  get_it: ^9.2.1
+  dartz: ^0.10.1
+
+  # Utils
+  intl: ^0.20.2
+  uuid: ^4.5.1
+  json_annotation: ^4.9.0
+  freezed_annotation: ^3.1.0
+
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.15
+  json_serializable: ^6.9.4
+  freezed: ^3.2.5
+  retrofit_generator: ^10.2.3
+  bloc_test: ^10.0.0
+  mocktail: ^1.0.4
+
+flutter:
+  uses-material-design: true
+  generate: true
+  assets:
+    - assets/images/

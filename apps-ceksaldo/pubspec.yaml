@@ -1,0 +1,53 @@
+name: app_ceksaldo
+description: "BMT SaaS - Aplikasi Kiosk Cek Saldo NFC"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  flutter_bloc: ^9.1.0
+  equatable: ^2.0.7
+
+  # Network
+  dio: ^5.8.0+1
+
+  # Storage
+  shared_preferences: ^2.3.5
+
+  # UI
+  flutter_svg: ^2.0.16
+
+  # DI
+  get_it: ^9.2.1
+  dartz: ^0.10.1
+
+  # Utils
+  intl: ^0.20.2
+  json_annotation: ^4.9.0
+  freezed_annotation: ^3.1.0
+
+  # NFC
+  nfc_manager: ^4.1.1
+
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.15
+  json_serializable: ^6.9.4
+  freezed: ^3.2.5
+  bloc_test: ^10.0.0
+  mocktail: ^1.0.4
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/

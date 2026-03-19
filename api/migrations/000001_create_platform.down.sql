@@ -1,0 +1,8 @@
+DROP TABLE IF EXISTS usage_log;
+DROP TABLE IF EXISTS pecahan_uang;
+DROP TABLE IF EXISTS cabang_settings;
+DROP TABLE IF EXISTS bmt_settings;
+DROP TABLE IF EXISTS platform_settings;
+DROP TABLE IF EXISTS cabang;
+DROP TABLE IF EXISTS kontrak_bmt;
+DROP TABLE IF EXISTS bmt;

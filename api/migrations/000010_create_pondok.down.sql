@@ -1,0 +1,16 @@
+DROP TABLE IF EXISTS tagihan_spp;
+DROP TABLE IF EXISTS pondok_jenis_tagihan;
+DROP TABLE IF EXISTS pondok_raport;
+DROP TABLE IF EXISTS pondok_nilai_akhlak;
+DROP TABLE IF EXISTS pondok_nilai_tahfidz;
+DROP TABLE IF EXISTS pondok_nilai;
+DROP TABLE IF EXISTS pondok_komponen_nilai;
+DROP TABLE IF EXISTS pondok_absensi;
+DROP TABLE IF EXISTS pondok_jadwal_pelajaran;
+DROP TABLE IF EXISTS pondok_mapel;
+DROP TABLE IF EXISTS pondok_karyawan;
+ALTER TABLE pondok_kelas DROP CONSTRAINT IF EXISTS fk_kelas_walikelas;
+DROP TABLE IF EXISTS pondok_pengajar;
+ALTER TABLE pondok_santri DROP CONSTRAINT IF EXISTS fk_santri_kelas;
+DROP TABLE IF EXISTS pondok_kelas;
+DROP TABLE IF EXISTS pondok_santri;

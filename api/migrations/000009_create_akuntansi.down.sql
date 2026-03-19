@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS jurnal_entry;
+DROP TABLE IF EXISTS jurnal;
+DROP TABLE IF EXISTS akun;
