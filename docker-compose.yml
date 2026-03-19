@@ -1,0 +1,143 @@
+services:
+
+  # ── API Go ──────────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+      args:
+        VERSION: ${APP_VERSION:-1.0.0}
+    container_name: bmt_api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-8080}:8080"
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      APP_NAME: bmt-saas
+      APP_VERSION: ${APP_VERSION:-1.0.0}
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: redis://redis:6379
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_ACCESS_EXPIRY: ${JWT_ACCESS_EXPIRY:-15m}
+      JWT_REFRESH_EXPIRY: ${JWT_REFRESH_EXPIRY:-168h}
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_BUCKET: ${MINIO_BUCKET:-bmt-files}
+      MINIO_USE_SSL: "false"
+      DEVELOPER_TOKEN: ${DEVELOPER_TOKEN}
+      MIDTRANS_SERVER_KEY: ${MIDTRANS_SERVER_KEY:-}
+      MIDTRANS_CLIENT_KEY: ${MIDTRANS_CLIENT_KEY:-}
+      MIDTRANS_ENV: ${MIDTRANS_ENV:-sandbox}
+      ASYNQ_CONCURRENCY: ${ASYNQ_CONCURRENCY:-10}
+    depends_on:
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    networks:
+      - bmt_network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ── Redis (Queue + Cache) ────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: bmt_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - bmt_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── MinIO (Object Storage) ───────────────────────────────────────────────────
+  minio:
+    image: minio/minio:latest
+    container_name: bmt_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - bmt_network
+    healthcheck:
+      test: ["CMD-SHELL", "mc ready local || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Web: apps-management (Staff & Management BMT) ───────────────────────────
+  web-management:
+    build:
+      context: ./apps-management
+      dockerfile: Dockerfile
+    container_name: bmt_web_management
+    restart: unless-stopped
+    ports:
+      - "${WEB_MANAGEMENT_PORT:-3001}:80"
+    environment:
+      API_BASE_URL: ${API_BASE_URL:-http://localhost:8080}
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - bmt_network
+
+  # ── Web: apps-developer (Developer Platform) ─────────────────────────────────
+  web-developer:
+    build:
+      context: ./apps-developer
+      dockerfile: Dockerfile
+    container_name: bmt_web_developer
+    restart: unless-stopped
+    ports:
+      - "${WEB_DEVELOPER_PORT:-3002}:80"
+    environment:
+      API_BASE_URL: ${API_BASE_URL:-http://localhost:8080}
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - bmt_network
+
+  # ── Web: apps-pondok (Admin Pondok) ──────────────────────────────────────────
+  web-pondok:
+    build:
+      context: ./apps-pondok
+      dockerfile: Dockerfile
+    container_name: bmt_web_pondok
+    restart: unless-stopped
+    ports:
+      - "${WEB_PONDOK_PORT:-3003}:80"
+    environment:
+      API_BASE_URL: ${API_BASE_URL:-http://localhost:8080}
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - bmt_network
+
+volumes:
+  redis_data:
+  minio_data:
+
+networks:
+  bmt_network:
+    driver: bridge

@@ -1,3 +1,10 @@
+# Environment — block file .env yang berisi secret, izinkan .env.example
+.env
+*.env
+.env.*
+*.env.*
+!.env.example
+
 # Go
 api/vendor/
 api/bin/
@@ -5,9 +12,6 @@ api/*.exe
 api/*.test
 api/coverage.out
 api/coverage.html
-*.env
-.env.*
-*.env.*
 
 # Flutter / Dart
 .dart_tool/
