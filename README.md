@@ -123,7 +123,7 @@ bmt-saas/
 
 ## Prinsip Utama
 
-Enam aturan yang **wajib dipatuhi** di seluruh codebase:
+Tujuh aturan yang **wajib dipatuhi** di seluruh codebase:
 
 ```
 1. TIDAK ADA HARDCODE          → semua konfigurasi dari settings DB
@@ -132,6 +132,7 @@ Enam aturan yang **wajib dipatuhi** di seluruh codebase:
 4. SETIAP QUERY                → di-scope bmt_id + cabang_id (tenant isolation)
 5. UANG = int64 (Money)        → tidak pernah float
 6. AUTODEBET GAGAL             → partial debit + INSERT tunggakan (bukan skip)
+7. JURNAL                      → Σ debit = Σ kredit, divalidasi sebelum persist
 ```
 
 ---
@@ -327,6 +328,10 @@ TestCrossTenant_QueryTanpaBMTID_Dilarang
 | `ADMIN_PONDOK` | apps-pondok | Semua fitur pondok |
 | `OPERATOR_PONDOK` | apps-pondok | Input santri, absensi, nilai |
 | `BENDAHARA_PONDOK` | apps-pondok | Tagihan, beasiswa, laporan keuangan |
+| `ACCOUNT_OFFICER` | apps-management | Pengajuan & monitoring pembiayaan |
+| `AUDITOR_BMT` | apps-management | Read-only semua laporan keuangan |
+| `WALI_SANTRI` | apps-nasabah | Monitoring akademik anak, bayar SPP |
+| `SANTRI` | apps-ceksaldo + apps-nasabah | Cek saldo NFC, raport digital |
 
 **Aturan khusus:**
 - Teller: semua tombol transaksi **disabled** tanpa sesi kas aktif
@@ -350,6 +355,7 @@ Workers berjalan otomatis via asynq (Redis-backed). Jadwal dalam WIB.
 | `EksekusiPayroll` | Tgl 1, 08:00 | Transfer gaji ke rekening pegawai |
 | `KirimNotifikasi` | Setiap 1 menit | Proses antrian FCM/WA/SMS/Email |
 | `BackupDatabase` | 02:00 daily | Dump PostgreSQL → MinIO |
+| `HitungZakat` | 31 Des, 23:00 | Hitung zakat mal akhir tahun per nasabah |
 
 ---
 
@@ -363,6 +369,21 @@ Prinsip syariah yang diterapkan di seluruh sistem:
 - **Autodebet partial:** menghasilkan jurnal syariah yang benar meski saldo kurang
 - **Wakaf produktif:** hasil usaha ke mauquf alaih, bukan ke BMT
 - **Dana sosial:** tidak bercampur dengan dana operasional BMT
+
+---
+
+## Status Pengembangan
+
+| Sprint | Scope | Status |
+|--------|-------|--------|
+| Sprint 1 | CBS Core (Teller, Nasabah, Rekening, Autodebet) | ✅ |
+| Sprint 2 | Keamanan + Middleware (Auth JWT, OTP, Session, Feature Gate, Audit Log) | ✅ |
+| Sprint 3 | Workers CBS (Autodebet bulanan, Kolektibilitas OJK, Distribusi Bagi Hasil, Reminder Angsuran) | ✅ |
+| Sprint 4 | Notifikasi + Midtrans (FCM, WhatsApp, SMS, Email, Webhook Midtrans) | ✅ |
+| Sprint 5 | Pembiayaan + Akuntansi (State machine pembiayaan, Laporan Neraca/SHU/Arus Kas, Zakat) | ✅ |
+| Sprint 6 | Pondok (Santri, Akademik, SPP, Raport) | upcoming |
+| Sprint 7 | OPOP E-commerce + NFC | upcoming |
+| Sprint 8 | SaaS Portal + Fraud + Integrasi DAPODIK/EMIS | upcoming |
 
 ---
 
