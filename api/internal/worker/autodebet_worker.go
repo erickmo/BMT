@@ -140,13 +140,15 @@ func (w *CBSWorker) HandleReminderAngsuran(ctx context.Context, t *asynq.Task) e
 }
 
 // RegisterWorkers mendaftarkan semua task handlers ke ServeMux.
-func RegisterWorkers(mux *asynq.ServeMux, autodebetWorker *AutodebetWorker, cbsWorker *CBSWorker) {
+func RegisterWorkers(mux *asynq.ServeMux, autodebetWorker *AutodebetWorker, cbsWorker *CBSWorker, notifikasiWorker *NotifikasiWorker) {
 	mux.HandleFunc(TaskAutodebetHarian, autodebetWorker.HandleAutodebetHarian)
 	mux.HandleFunc(TaskAutodebetBulanan, autodebetWorker.HandleAutodebetBulanan)
 	mux.HandleFunc(TaskGenerateJadwal, autodebetWorker.HandleGenerateJadwal)
 	mux.HandleFunc(TaskUpdateKolektibilitas, cbsWorker.HandleUpdateKolektibilitas)
 	mux.HandleFunc(TaskDistribusiBagiHasil, cbsWorker.HandleDistribusiBagiHasil)
 	mux.HandleFunc(TaskReminderAngsuran, cbsWorker.HandleReminderAngsuran)
+	mux.HandleFunc(TaskKirimNotifikasi, notifikasiWorker.HandleKirimNotifikasi)
+	mux.HandleFunc(TaskCekMidtransPending, notifikasiWorker.HandleCekMidtransPending)
 }
 
 // SchedulePeriodicTasks mendaftarkan semua cron jobs ke Scheduler.

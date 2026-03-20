@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/bmt-saas/api/internal/config"
+	"github.com/bmt-saas/api/internal/domain/notifikasi"
 	"github.com/bmt-saas/api/internal/handler/auth"
 	"github.com/bmt-saas/api/internal/handler/developer"
 	"github.com/bmt-saas/api/internal/handler/ecommerce"
@@ -21,11 +22,13 @@ import (
 	"github.com/bmt-saas/api/internal/handler/platform"
 	"github.com/bmt-saas/api/internal/handler/pondok"
 	"github.com/bmt-saas/api/internal/handler/teller"
+	handlerwebhook "github.com/bmt-saas/api/internal/handler/webhook"
 	"github.com/bmt-saas/api/internal/middleware"
 	"github.com/bmt-saas/api/internal/repository/postgres"
 	"github.com/bmt-saas/api/internal/service"
 	"github.com/bmt-saas/api/internal/worker"
 	"github.com/bmt-saas/api/pkg/jwt"
+	"github.com/bmt-saas/api/pkg/notif"
 	"github.com/bmt-saas/api/pkg/settings"
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
@@ -127,6 +130,8 @@ func main() {
 	auditRepo := postgres.NewAuditRepository(dbPool)
 	penggunaRepo := postgres.NewPenggunaRepository(dbPool)
 	keamananRepo := postgres.NewKeamananRepository(dbPool)
+	notifikasiRepo := postgres.NewNotifikasiRepository(dbPool)
+	paymentRepo := postgres.NewPaymentRepository(dbPool)
 
 	// ── Settings Resolver ─────────────────────────────────────────────────────
 	settingsResolver := settings.NewResolver(settingsRepo)
@@ -156,9 +161,21 @@ func main() {
 	sesiTellerService := service.NewSesiTellerService(sesiTellerRepo, settingsResolver)
 	featureChecker := service.NewPlatformFeatureChecker(platformRepo)
 	sessionService := service.NewSessionService(keamananRepo, jwtManager, settingsResolver)
-	otpService := service.NewOTPService(keamananRepo, redisClient, settingsResolver, nil)
+	// NotifikasiService — wire providers dari settings env
+	notifikasiSvc := service.NewNotifikasiService(notifikasiRepo, settingsResolver)
+	notifikasiSvc.SetProvider(notifikasi.ChannelFCM,
+		notif.NewFCMProvider(os.Getenv("FCM_SERVER_KEY")))
+	notifikasiSvc.SetProvider(notifikasi.ChannelWhatsApp,
+		notif.NewWhatsAppProvider(os.Getenv("WA_PROVIDER"), os.Getenv("WA_TOKEN")))
+	notifikasiSvc.SetProvider(notifikasi.ChannelSMS,
+		notif.NewSMSProvider(os.Getenv("SMS_PROVIDER"), os.Getenv("SMS_API_USER"), os.Getenv("SMS_API_KEY")))
+	notifikasiSvc.SetProvider(notifikasi.ChannelEmail,
+		notif.NewSMTPProvider(os.Getenv("SMTP_HOST"), os.Getenv("SMTP_PORT"), os.Getenv("SMTP_USER"), os.Getenv("SMTP_PASS"), os.Getenv("SMTP_FROM")))
+
+	otpService := service.NewOTPService(keamananRepo, redisClient, settingsResolver, notifikasiSvc)
 	authService := service.NewAuthService(penggunaRepo, nasabahRepo, sessionService, otpService, settingsResolver)
 	formService := service.NewFormService(formRepo, nasabahRepo, rekeningRepo, settingsResolver)
+	midtransSvc := service.NewMidtransService(paymentRepo, settingsResolver, cfg.Midtrans.ServerKey)
 	_ = service.NewSettingsService(settingsResolver)
 	_ = featureChecker
 	_ = tunggakanService
@@ -168,6 +185,7 @@ func main() {
 
 	autodebetWorker := worker.NewAutodebetWorker(autodebetService)
 	cbsWorker := worker.NewCBSWorker(kolektibilitasService, distribusiService, reminderService)
+	notifikasiWorker := worker.NewNotifikasiWorker(notifikasiSvc, midtransSvc)
 
 	asynqServer := asynq.NewServer(
 		asynqRedisOpt,
@@ -182,7 +200,7 @@ func main() {
 	)
 
 	mux := asynq.NewServeMux()
-	worker.RegisterWorkers(mux, autodebetWorker, cbsWorker)
+	worker.RegisterWorkers(mux, autodebetWorker, cbsWorker, notifikasiWorker)
 
 	go func() {
 		log.Info().Msg("Starting asynq worker server")
@@ -324,8 +342,9 @@ func main() {
 	})
 
 	// Webhook routes
+	webhookHandler := handlerwebhook.NewHandler(midtransSvc)
 	r.Route("/webhook", func(r chi.Router) {
-		// TODO: register Midtrans webhook
+		webhookHandler.RegisterRoutes(r)
 	})
 
 	// ── HTTP Server ───────────────────────────────────────────────────────────
