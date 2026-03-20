@@ -127,6 +127,7 @@ func main() {
 	_ = produkRepo
 	_ = pesananRepo
 
+	financeRepo := postgres.NewFinanceRepository(dbPool)
 	auditRepo := postgres.NewAuditRepository(dbPool)
 	penggunaRepo := postgres.NewPenggunaRepository(dbPool)
 	keamananRepo := postgres.NewKeamananRepository(dbPool)
@@ -176,15 +177,19 @@ func main() {
 	authService := service.NewAuthService(penggunaRepo, nasabahRepo, sessionService, otpService, settingsResolver)
 	formService := service.NewFormService(formRepo, nasabahRepo, rekeningRepo, settingsResolver)
 	midtransSvc := service.NewMidtransService(paymentRepo, settingsResolver, cfg.Midtrans.ServerKey)
+	pembiayaanSvc := service.NewPembiayaanService(pembiayaanRepo, rekeningService, akuntansiService, notifikasiSvc)
+	financeSvc := service.NewFinanceService(financeRepo, pembiayaanRepo, settingsResolver)
+	zakatSvc := service.NewZakatService(rekeningRepo, settingsResolver)
 	_ = service.NewSettingsService(settingsResolver)
 	_ = featureChecker
 	_ = tunggakanService
+	_ = pembiayaanSvc
 
 	// ── Workers ───────────────────────────────────────────────────────────────
 	asynqRedisOpt := asynq.RedisClientOpt{Addr: redisOpts.Addr, Password: redisOpts.Password}
 
 	autodebetWorker := worker.NewAutodebetWorker(autodebetService)
-	cbsWorker := worker.NewCBSWorker(kolektibilitasService, distribusiService, reminderService)
+	cbsWorker := worker.NewCBSWorker(kolektibilitasService, distribusiService, reminderService, zakatSvc)
 	notifikasiWorker := worker.NewNotifikasiWorker(notifikasiSvc, midtransSvc)
 
 	asynqServer := asynq.NewServer(
@@ -284,6 +289,7 @@ func main() {
 
 	// Management API routes
 	formHandler := handlerform.NewHandler(formService)
+	financeHandler := finance.NewHandler(financeSvc, pembiayaanSvc)
 	r.Route("/api", func(r chi.Router) {
 		r.Use(middleware.Auth(jwtManager))
 		r.Use(middleware.TenantRequired)
@@ -295,7 +301,7 @@ func main() {
 		// Finance sub-routes
 		r.Route("/finance", func(r chi.Router) {
 			r.Use(middleware.RequireRole("FINANCE", "MANAJER_CABANG", "MANAJER_BMT"))
-			finance.RegisterRoutes(r)
+			financeHandler.RegisterRoutes(r)
 		})
 	})
 
@@ -304,7 +310,7 @@ func main() {
 		r.Use(middleware.Auth(jwtManager))
 		r.Use(middleware.TenantRequired)
 		r.Use(middleware.RequireRole("FINANCE", "MANAJER_CABANG", "MANAJER_BMT", "AUDITOR_BMT"))
-		finance.RegisterRoutes(r)
+		financeHandler.RegisterRoutes(r)
 	})
 
 	// Pondok routes

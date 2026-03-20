@@ -34,6 +34,7 @@ const (
 	TaskBackupDatabase       = "platform:backup_db"
 	TaskReminderPerpus       = "perpus:reminder"
 	TaskGenerateRaport       = "akademik:generate_raport"
+	TaskHitungZakat          = "zakat:hitung_mal"
 )
 
 type PayloadBMT struct {
@@ -78,22 +79,25 @@ func (w *AutodebetWorker) HandleGenerateJadwal(ctx context.Context, t *asynq.Tas
 	return w.autodebetService.GenerateJadwalBulanDepan(ctx, payload.BMTID)
 }
 
-// CBSWorker menangani task CBS: kolektibilitas, distribusi bagi hasil, reminder angsuran.
+// CBSWorker menangani task CBS: kolektibilitas, distribusi bagi hasil, reminder angsuran, dan zakat.
 type CBSWorker struct {
 	kolektibilitasSvc *service.KolektibilitasService
 	distribusiSvc     *service.DistribusiService
 	reminderSvc       *service.ReminderService
+	zakatSvc          *service.ZakatService
 }
 
 func NewCBSWorker(
 	kolektibilitasSvc *service.KolektibilitasService,
 	distribusiSvc *service.DistribusiService,
 	reminderSvc *service.ReminderService,
+	zakatSvc *service.ZakatService,
 ) *CBSWorker {
 	return &CBSWorker{
 		kolektibilitasSvc: kolektibilitasSvc,
 		distribusiSvc:     distribusiSvc,
 		reminderSvc:       reminderSvc,
+		zakatSvc:          zakatSvc,
 	}
 }
 
@@ -139,6 +143,21 @@ func (w *CBSWorker) HandleReminderAngsuran(ctx context.Context, t *asynq.Task) e
 	return w.reminderSvc.ReminderAngsuranBMT(ctx, payload.BMTID)
 }
 
+// HandleHitungZakat menghitung kewajiban zakat mal akhir tahun berdasarkan nisab dari settings.
+// Payload: { "bmt_id": "..." }
+func (w *CBSWorker) HandleHitungZakat(ctx context.Context, t *asynq.Task) error {
+	var payload PayloadBMT
+	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
+		return fmt.Errorf("gagal unmarshal payload: %w", err)
+	}
+	count, err := w.zakatSvc.HitungZakatBMT(ctx, payload.BMTID)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("[HandleHitungZakat] BMT %s: %d rekening memenuhi nisab zakat\n", payload.BMTID, count)
+	return nil
+}
+
 // RegisterWorkers mendaftarkan semua task handlers ke ServeMux.
 func RegisterWorkers(mux *asynq.ServeMux, autodebetWorker *AutodebetWorker, cbsWorker *CBSWorker, notifikasiWorker *NotifikasiWorker) {
 	mux.HandleFunc(TaskAutodebetHarian, autodebetWorker.HandleAutodebetHarian)
@@ -147,6 +166,7 @@ func RegisterWorkers(mux *asynq.ServeMux, autodebetWorker *AutodebetWorker, cbsW
 	mux.HandleFunc(TaskUpdateKolektibilitas, cbsWorker.HandleUpdateKolektibilitas)
 	mux.HandleFunc(TaskDistribusiBagiHasil, cbsWorker.HandleDistribusiBagiHasil)
 	mux.HandleFunc(TaskReminderAngsuran, cbsWorker.HandleReminderAngsuran)
+	mux.HandleFunc(TaskHitungZakat, cbsWorker.HandleHitungZakat)
 	mux.HandleFunc(TaskKirimNotifikasi, notifikasiWorker.HandleKirimNotifikasi)
 	mux.HandleFunc(TaskCekMidtransPending, notifikasiWorker.HandleCekMidtransPending)
 }
@@ -216,4 +236,8 @@ func SchedulePeriodicTasks(scheduler *asynq.Scheduler) {
 
 	// Generate raport: dikonfigurasi per BMT, worker cek setiap hari
 	scheduler.Register("0 3 * * *", asynq.NewTask(TaskGenerateRaport, nil))
+
+	// Hitung zakat mal: 1 Januari, 06:00 WIB = 23:00 UTC sehari sebelumnya
+	// Worker membaca ZAKAT_NISAB_RUPIAH dari settings; skip jika 0.
+	scheduler.Register("0 23 31 12 *", asynq.NewTask(TaskHitungZakat, nil))
 }
