@@ -1,82 +1,98 @@
 # CLAUDE.md — Platform Pesantren Terpadu (SaaS)
 
-## Gambaran Proyek
+> **Terakhir diperbarui:** 20 Maret 2026
+> **Versi:** 1.5
 
-Platform ekosistem digital terpadu untuk pondok pesantren dalam **satu monorepo**, **satu API Go**, dan **tujuh aplikasi Flutter**. Sistem wajib mematuhi prinsip syariah Islam di seluruh domain keuangan.
+Platform digital terpadu untuk pondok pesantren:
+**CBS (Core Banking) + ERP Pondok + E-commerce OPOP + Listing Stakeholder**
+— satu monorepo, satu API Go, tujuh Flutter apps.
+
+## Sprint Aktif
+
+**Sprint 1 — 20 Mar s/d 3 Apr 2026** · [Rencana lengkap → docs/sprint-plan.md](docs/sprint-plan.md)
+
+| # | Item | Status |
+|---|------|--------|
+| 1 | `RekeningService.Tarik()` + `Transfer()` | ✅ |
+| 2 | `NasabahService` — GetByID, Search, ListRekening, GetMutasi | ✅ |
+| 3 | `SesiTellerService` — buka/tutup sesi, validasi selisih | ✅ |
+| 4 | Wire handler `/teller/*` + `/nasabah/*` → services | ✅ |
+| 5 | `middleware/feature_gate.go` — `RequireFeature(kode)` | ✅ |
+| 6 | `middleware/audit_log.go` — catat semua mutasi | ✅ |
+| 7 | `PlatformFeatureChecker` + `AuditRepository` | ✅ |
 
 ---
 
-## Prinsip Utama (Selalu Ikuti)
+## Dokumentasi → `docs/`
 
+| File | Domain |
+|------|--------|
+| [docs/01-arsitektur.md](docs/01-arsitektur.md) | Hierarki tenant, prinsip global, struktur direktori |
+| [docs/02-stack.md](docs/02-stack.md) | Tech stack, 7 Flutter apps, module-vernon-accounting |
+| [docs/03-saas.md](docs/03-saas.md) | **SaaS: tier paket, add-on fitur, portal developer, listing stakeholder** |
+| [docs/04-settings.md](docs/04-settings.md) | Settings engine 3-level, semua kunci konfigurasi |
+| [docs/05-cbs.md](docs/05-cbs.md) | CBS: nasabah, rekening, transaksi, autodebet, teller, pembiayaan |
+| [docs/06-pondok-akademik.md](docs/06-pondok-akademik.md) | Administrasi, akademik, kurikulum, jadwal, absensi, penilaian |
+| [docs/07-pondok-ops.md](docs/07-pondok-ops.md) | Perpustakaan, UKS, asrama, inventaris, PPDB, konsultasi, izin |
+| [docs/08-pondok-pengembangan.md](docs/08-pondok-pengembangan.md) | Portfolio, hafalan, ekstra, alumni, event, SDM, payroll |
+| [docs/09-ecommerce.md](docs/09-ecommerce.md) | OPOP B2C+B2B, toko, produk, pesanan |
+| [docs/10-keuangan.md](docs/10-keuangan.md) | Akuntansi, donasi, wakaf, zakat |
+| [docs/11-keamanan.md](docs/11-keamanan.md) | 2FA, session, audit log, anti-fraud, rate limiting, offline mode |
+| [docs/12-notifikasi.md](docs/12-notifikasi.md) | FCM, WhatsApp, SMS, Email, Bulletin Board, chat staf |
+| [docs/13-integrasi.md](docs/13-integrasi.md) | Midtrans, DAPODIK, EMIS, white-label |
+| [docs/14-api.md](docs/14-api.md) | Semua endpoint per domain |
+| [docs/15-workers.md](docs/15-workers.md) | Background workers (asynq) |
+| [docs/16-konvensi.md](docs/16-konvensi.md) | Konvensi Go & Flutter, error sentinel, testing |
+| [docs/17-form-workflow.md](docs/17-form-workflow.md) | Form pengajuan + approval engine |
+| [docs/18-syariah-glosarium.md](docs/18-syariah-glosarium.md) | Checklist syariah, role lengkap, glosarium |
+
+---
+
+## Stack Cepat
 ```
-1. TIDAK ADA HARDCODE — semua konfigurasi dari settings DB
-2. TIDAK ADA UPDATE LANGSUNG — data nasabah/rekening via form + approval
-3. SETIAP TRANSAKSI KEUANGAN = DB transaction + jurnal + usage_log
-4. SETIAP QUERY = di-scope bmt_id + cabang_id (tenant isolation)
-5. UANG = int64 (Money), TIDAK PERNAH float
-6. AUTODEBET GAGAL = partial debit + INSERT tunggakan
+Backend  : Go 1.23 + Chi router    [api/]
+Database : PostgreSQL 17 + Redis 7
+Query    : sqlc (bukan ORM)
+Queue    : asynq
+Storage  : MinIO
+Payment  : Midtrans
+Akuntansi: module-vernon-accounting/ (internal Go)
+HRM      : module-vernon-hrm/          (internal Go)
+Apps     : 7 Flutter (→ docs/02-stack.md)
 ```
 
----
+## 7 Prinsip Wajib
+1. **TIDAK ADA HARDCODE** — semua konfigurasi dari `settings` DB
+2. **TIDAK ADA UPDATE LANGSUNG** — nasabah/rekening wajib via form + approval
+3. **SETIAP TRANSAKSI** = DB transaction + jurnal (module-vernon-accounting) + usage_log
+4. **SETIAP QUERY** = di-scope `bmt_id` + `cabang_id`
+5. **UANG** = `type Money int64` — **TIDAK PERNAH** float
+6. **AUTODEBET GAGAL** = partial debit + INSERT tunggakan
+7. **JURNAL** = Σ debit = Σ kredit, divalidasi sebelum persist
 
-## Stack Teknologi
-
-| Layer | Teknologi |
-|-------|-----------|
-| Backend API | Go 1.23 (net/http + Chi router) |
-| Database | PostgreSQL 16 + sqlc (BUKAN ORM) |
-| Cache / Queue | Redis 7 + asynq |
-| Auth | JWT — access 15m + refresh 7d |
-| Storage | MinIO (self-hosted S3) |
-| Payment | Midtrans (Snap + Core API) |
-| PDF | chromedp |
-| Migration | golang-migrate |
-| Frontend | Flutter (7 apps — lihat domain 20) |
-| Akuntansi | module-vernon-accounting (Go internal) |
-
----
+## Hierarki Tenant
+```
+PLATFORM (Developer)
+└── BMT  ← dibuat developer, termasuk paket tier & fitur aktif
+    └── CABANG
+        ├── Nasabah / Rekening / Transaksi
+        ├── Data Pondok (Santri, Akademik, SDM)
+        └── Toko OPOP
+```
 
 ## Struktur Direktori
-
 ```
 bmt-saas/
-├── api/                          # Backend Go — satu API semua domain
-├── apps-nasabah/                 # Flutter Android + iOS
-├── apps-management/              # Flutter Web + Desktop + Mobile
-├── apps-developer/               # Flutter Web + Desktop + Mobile
-├── apps-teller/                  # Flutter Desktop
-├── apps-merchant/                # Flutter Android + iOS
-├── apps-ceksaldo/                # Flutter Android / Kiosk
-├── apps-pondok/                  # Flutter Web + Mobile
-├── module-vernon-accounting/     # Modul akuntansi double-entry
+├── api/                          # Go — satu API semua domain
+├── app/
+│   ├── nasabah/                  # Flutter Android + iOS
+│   ├── management/               # Flutter Web + Desktop + Mobile
+│   ├── developer/                # Flutter Web + Desktop + Mobile
+│   ├── teller/                   # Flutter Desktop
+│   ├── merchant/                 # Flutter Android + iOS
+│   ├── ceksaldo/                 # Flutter Android / Kiosk
+│   └── pondok/                   # Flutter Web + Mobile
+├── module-vernon-accounting/
+├── module-vernon-hrm/
 └── docs/
 ```
-
----
-
-## Domain Files — Baca Sesuai Konteks Pekerjaan
-
-Detail lengkap tersedia di `.claude/domains/`. Baca domain yang relevan sebelum bekerja.
-
-| File | Domain | Kapan Dibaca |
-|------|--------|--------------|
-| `01-platform-arsitektur.md` | Prinsip, tenant hierarchy, struktur API | Setup, onboarding, arsitektur baru |
-| `02-settings-engine.md` | Settings tables, resolver, pecahan uang | Saat membuat fitur yang butuh konfigurasi |
-| `03-cbs-banking.md` | Rekening, autodebet, pembiayaan, akuntansi | Domain CBS / banking |
-| `04-erp-pondok.md` | Santri, kurikulum, jadwal, absensi, raport | Domain ERP pondok |
-| `05-ecommerce-opop.md` | Toko, produk, pesanan, OPOP | Domain e-commerce |
-| `06-notifikasi.md` | FCM, WA, SMS, Email, Bulletin Board | Domain notifikasi |
-| `07-keamanan-audit.md` | 2FA, session, audit log, anti-fraud | Domain keamanan |
-| `08-analytics-laporan.md` | Dashboard RT, laporan custom | Domain analytics |
-| `09-donasi-wakaf.md` | Donasi, wakaf produktif, infaq | Domain sosial keuangan |
-| `10-sdm-payroll.md` | Kontrak, slip gaji, payroll | Domain SDM |
-| `11-sosial-pondok.md` | Perpustakaan, konsultasi, izin, UKS, alumni | Domain sosial pondok |
-| `12-inventaris-aset.md` | Aset tetap, peminjaman ruang | Domain inventaris |
-| `13-integrasi-eksternal.md` | DAPODIK, EMIS, PPDB | Domain integrasi |
-| `14-monetisasi.md` | Komisi OPOP, iklan, white-label | Domain monetisasi |
-| `15-api-endpoints.md` | Semua endpoint API | Saat membuat/mengubah handler |
-| `16-workers.md` | Background workers (jadwal & deskripsi) | Saat membuat/mengubah worker |
-| `17-roles-permissions.md` | Semua role & aturan akses | Saat mengatur middleware auth |
-| `18-testing.md` | Strategi testing, test wajib | Saat membuat test |
-| `19-konvensi-koding.md` | Pola Go wajib, error sentinel, glosarium | **Selalu dibaca** |
-| `20-flutter-apps.md` | Deskripsi 7 Flutter apps | Saat bekerja di Flutter app |

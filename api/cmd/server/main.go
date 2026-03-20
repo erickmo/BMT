@@ -113,11 +113,8 @@ func main() {
 	pesananRepo := postgres.NewPesananRepository(dbPool)
 
 	// Suppress unused variable warnings for repos not yet used by handlers
-	_ = platformRepo
-	_ = nasabahRepo
 	_ = formRepo
 	_ = pembiayaanRepo
-	_ = sesiTellerRepo
 	_ = santriRepo
 	_ = kelasRepo
 	_ = pengajarRepo
@@ -126,6 +123,8 @@ func main() {
 	_ = tokoRepo
 	_ = produkRepo
 	_ = pesananRepo
+
+	auditRepo := postgres.NewAuditRepository(dbPool)
 
 	// ── Settings Resolver ─────────────────────────────────────────────────────
 	settingsResolver := settings.NewResolver(settingsRepo)
@@ -139,7 +138,11 @@ func main() {
 		akuntansiService,
 	)
 	autodebetService := service.NewAutodebetService(autodebetRepo, rekeningService)
+	nasabahService := service.NewNasabahService(nasabahRepo, rekeningRepo)
+	sesiTellerService := service.NewSesiTellerService(sesiTellerRepo, settingsResolver)
+	featureChecker := service.NewPlatformFeatureChecker(platformRepo)
 	_ = service.NewSettingsService(settingsResolver)
+	_ = featureChecker
 
 	// ── Workers ───────────────────────────────────────────────────────────────
 	asynqRedisOpt := asynq.RedisClientOpt{Addr: redisOpts.Addr, Password: redisOpts.Password}
@@ -232,17 +235,20 @@ func main() {
 	})
 
 	// Teller routes
+	tellerHandler := teller.NewHandler(sesiTellerService, rekeningService, nasabahService)
 	r.Route("/teller", func(r chi.Router) {
 		r.Use(middleware.Auth(jwtManager))
 		r.Use(middleware.TenantRequired)
 		r.Use(middleware.RequireRole("TELLER", "MANAJER_CABANG"))
-		teller.RegisterRoutes(r)
+		r.Use(middleware.AuditLog(auditRepo))
+		tellerHandler.RegisterRoutes(r)
 	})
 
 	// Nasabah routes
+	nasabahHandler := nasabah.NewHandler(nasabahService, rekeningService)
 	r.Route("/nasabah", func(r chi.Router) {
 		r.Use(middleware.Auth(jwtManager))
-		nasabah.RegisterRoutes(r)
+		nasabahHandler.RegisterRoutes(r)
 	})
 
 	// Management API routes
