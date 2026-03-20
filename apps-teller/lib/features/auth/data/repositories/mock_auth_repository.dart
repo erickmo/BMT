@@ -14,8 +14,8 @@ class MockAuthRepository implements AuthRepository {
 
   static const _mockStaf = StafEntity(
     id: '00000000-0000-0000-0000-000000000001',
-    nama: 'Teller Demo',
-    email: 'teller@demo.bmt',
+    nama: 'Mo Intinusa',
+    email: 'mo@intinusa.id',
     role: 'TELLER',
     cabangId: '00000000-0000-0000-0000-000000000001',
     cabangNama: 'Cabang Utama',
@@ -23,6 +23,9 @@ class MockAuthRepository implements AuthRepository {
     accessToken: 'mock_access_token',
     refreshToken: 'mock_refresh_token',
   );
+
+  static const _validEmail = 'mo@intinusa.id';
+  static const _validPassword = '123123';
 
   MockAuthRepository({
     required this.localStorage,
@@ -51,6 +54,9 @@ class MockAuthRepository implements AuthRepository {
     required String password,
     required String deviceId,
   }) async {
+    if (username != _validEmail || password != _validPassword) {
+      return const Left(ServerFailure(message: 'Email atau password salah'));
+    }
     await _seedLocalStorage();
     return const Right(_mockStaf);
   }
