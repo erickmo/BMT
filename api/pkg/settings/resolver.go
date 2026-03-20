@@ -77,6 +77,16 @@ func (r *Resolver) ResolveBool(ctx context.Context, bmtID, cabangID uuid.UUID, k
 	return val == "true" || val == "1" || val == "yes"
 }
 
+// GetApprovers mengembalikan daftar role approver untuk jenis form.
+func (r *Resolver) GetApprovers(ctx context.Context, bmtID, cabangID uuid.UUID, jenisForm string) []string {
+	var approvers []string
+	key := "approval." + jenisForm
+	if err := r.ResolveJSON(ctx, bmtID, cabangID, key, &approvers); err != nil {
+		return []string{"MANAJER_CABANG"}
+	}
+	return approvers
+}
+
 // ResolveJSON resolves a setting as JSON into target
 func (r *Resolver) ResolveJSON(ctx context.Context, bmtID, cabangID uuid.UUID, kunci string, target interface{}) error {
 	val := r.Resolve(ctx, bmtID, cabangID, kunci)

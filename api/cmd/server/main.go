@@ -14,6 +14,7 @@ import (
 	"github.com/bmt-saas/api/internal/handler/developer"
 	"github.com/bmt-saas/api/internal/handler/ecommerce"
 	"github.com/bmt-saas/api/internal/handler/finance"
+	handlerform "github.com/bmt-saas/api/internal/handler/form"
 	"github.com/bmt-saas/api/internal/handler/merchant"
 	"github.com/bmt-saas/api/internal/handler/nasabah"
 	"github.com/bmt-saas/api/internal/handler/nfc"
@@ -125,9 +126,19 @@ func main() {
 	_ = pesananRepo
 
 	auditRepo := postgres.NewAuditRepository(dbPool)
+	penggunaRepo := postgres.NewPenggunaRepository(dbPool)
+	keamananRepo := postgres.NewKeamananRepository(dbPool)
 
 	// ── Settings Resolver ─────────────────────────────────────────────────────
 	settingsResolver := settings.NewResolver(settingsRepo)
+
+	// ── JWT Manager ───────────────────────────────────────────────────────────
+	jwtManager := jwt.NewManager(
+		cfg.JWT.AccessSecret,
+		cfg.JWT.RefreshSecret,
+		cfg.JWT.AccessExpiry,
+		cfg.JWT.RefreshExpiry,
+	)
 
 	// ── Services ──────────────────────────────────────────────────────────────
 	akuntansiService := service.NewAkuntansiService(akuntansiRepo)
@@ -141,6 +152,10 @@ func main() {
 	nasabahService := service.NewNasabahService(nasabahRepo, rekeningRepo)
 	sesiTellerService := service.NewSesiTellerService(sesiTellerRepo, settingsResolver)
 	featureChecker := service.NewPlatformFeatureChecker(platformRepo)
+	sessionService := service.NewSessionService(keamananRepo, jwtManager, settingsResolver)
+	otpService := service.NewOTPService(keamananRepo, redisClient, settingsResolver, nil)
+	authService := service.NewAuthService(penggunaRepo, nasabahRepo, sessionService, otpService, settingsResolver)
+	formService := service.NewFormService(formRepo, nasabahRepo, rekeningRepo, settingsResolver)
 	_ = service.NewSettingsService(settingsResolver)
 	_ = featureChecker
 
@@ -182,14 +197,6 @@ func main() {
 		}
 	}()
 
-	// ── JWT Manager ───────────────────────────────────────────────────────────
-	jwtManager := jwt.NewManager(
-		cfg.JWT.AccessSecret,
-		cfg.JWT.RefreshSecret,
-		cfg.JWT.AccessExpiry,
-		cfg.JWT.RefreshExpiry,
-	)
-
 	// ── Router ────────────────────────────────────────────────────────────────
 	r := chi.NewRouter()
 
@@ -223,8 +230,9 @@ func main() {
 	})
 
 	// Auth routes
+	authHandler := auth.NewHandler(authService, sessionService, jwtManager)
 	r.Route("/auth", func(r chi.Router) {
-		auth.RegisterRoutes(r, jwtManager)
+		authHandler.RegisterRoutes(r)
 	})
 
 	// Platform routes (BMT management)
@@ -252,9 +260,15 @@ func main() {
 	})
 
 	// Management API routes
+	formHandler := handlerform.NewHandler(formService)
 	r.Route("/api", func(r chi.Router) {
 		r.Use(middleware.Auth(jwtManager))
 		r.Use(middleware.TenantRequired)
+		r.Use(middleware.AuditLog(auditRepo))
+		// Form workflow routes
+		r.Route("/form", func(r chi.Router) {
+			formHandler.RegisterRoutes(r)
+		})
 		// Finance sub-routes
 		r.Route("/finance", func(r chi.Router) {
 			r.Use(middleware.RequireRole("FINANCE", "MANAJER_CABANG", "MANAJER_BMT"))
