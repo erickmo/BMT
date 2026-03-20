@@ -8,6 +8,7 @@ import 'core/storage/secure_storage.dart';
 // Auth
 import 'features/auth/data/datasources/auth_remote_ds.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
+import 'features/auth/data/repositories/mock_auth_repository.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/domain/usecases/login_usecase.dart';
 import 'features/auth/domain/usecases/logout_usecase.dart';
@@ -27,6 +28,8 @@ import 'features/transaksi/data/datasources/transaksi_remote_ds.dart';
 import 'features/transaksi/data/repositories/transaksi_repository_impl.dart';
 import 'features/transaksi/domain/repositories/transaksi_repository.dart';
 import 'features/transaksi/presentation/bloc/transaksi_bloc.dart';
+
+const _mockLogin = bool.fromEnvironment('MOCK_LOGIN');
 
 final sl = GetIt.instance;
 
@@ -52,16 +55,23 @@ Future<void> initDependencies() async {
   );
 
   // ── Auth ──────────────────────────────────────────────────────────────────
-  sl.registerLazySingleton<AuthRemoteDataSource>(
-    () => AuthRemoteDataSourceImpl(sl<DioClient>()),
-  );
+  if (!_mockLogin) {
+    sl.registerLazySingleton<AuthRemoteDataSource>(
+      () => AuthRemoteDataSourceImpl(sl<DioClient>()),
+    );
+  }
 
   sl.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(
-      remoteDataSource: sl<AuthRemoteDataSource>(),
-      secureStorage: sl<SecureStorage>(),
-      localStorage: sl<LocalStorage>(),
-    ),
+    () => _mockLogin
+        ? MockAuthRepository(
+            localStorage: sl<LocalStorage>(),
+            secureStorage: sl<SecureStorage>(),
+          )
+        : AuthRepositoryImpl(
+            remoteDataSource: sl<AuthRemoteDataSource>(),
+            secureStorage: sl<SecureStorage>(),
+            localStorage: sl<LocalStorage>(),
+          ),
   );
 
   sl.registerLazySingleton(() => LoginUseCase(sl<AuthRepository>()));

@@ -18,10 +18,18 @@ class _MainShellState extends State<MainShell> {
   int _selectedIndex = 0;
 
   final List<_NavItem> _navItems = const [
-    _NavItem(icon: Icons.corporate_fare, label: AppStrings.navBmt),
-    _NavItem(icon: Icons.payments_outlined, label: AppStrings.navPecahan),
-    _NavItem(icon: Icons.tune, label: AppStrings.navSettings),
-    _NavItem(icon: Icons.analytics_outlined, label: AppStrings.navUsageLog),
+    _NavItem(
+        icon: Icons.corporate_fare_rounded,
+        label: AppStrings.navBmt),
+    _NavItem(
+        icon: Icons.payments_outlined,
+        label: AppStrings.navPecahan),
+    _NavItem(
+        icon: Icons.tune_rounded,
+        label: AppStrings.navSettings),
+    _NavItem(
+        icon: Icons.analytics_outlined,
+        label: AppStrings.navUsageLog),
   ];
 
   final List<Widget> _pages = const [
@@ -71,71 +79,182 @@ class _DevSidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 220,
-      color: AppColors.sidebarBg,
+      width: 240,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF040F07), Color(0xFF071A0D)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        border: Border(
+          right: BorderSide(color: Color(0x1A34D399), width: 1),
+        ),
+      ),
       child: Column(
         children: [
-          Container(
-            height: 72,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+          // ── Header ────────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 28, 20, 20),
             child: Row(
               children: [
-                const Icon(Icons.terminal, color: AppColors.accent, size: 28),
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A7A4A).withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                        color: const Color(0xFF34D399).withOpacity(0.3),
+                        width: 1),
+                  ),
+                  child: const Icon(Icons.terminal_rounded,
+                      color: Color(0xFF34D399), size: 20),
+                ),
                 const SizedBox(width: 12),
                 Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('BMT', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                    Text('Developer', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
+                    const Text(
+                      'BMT',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
+                    Text(
+                      'Developer',
+                      style: TextStyle(
+                        color: const Color(0xFF34D399).withOpacity(0.8),
+                        fontSize: 11,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
                   ],
                 ),
               ],
             ),
           ),
-          const Divider(color: Colors.white12, height: 1),
+          Container(
+            height: 1,
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            color: Colors.white.withOpacity(0.06),
+          ),
           const SizedBox(height: 8),
+          // ── Nav ───────────────────────────────────────────────────────────
           Expanded(
-            child: ListView.builder(
-              itemCount: items.length,
-              itemBuilder: (_, i) {
-                final selected = selectedIndex == i;
-                return Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: selected ? AppColors.sidebarActive.withOpacity(0.4) : null,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: ListTile(
-                    dense: true,
-                    leading: Icon(
-                      items[i].icon,
-                      color: selected ? AppColors.accent : AppColors.sidebarText,
-                      size: 20,
-                    ),
-                    title: Text(
-                      items[i].label,
-                      style: TextStyle(
-                        color: selected ? AppColors.accent : AppColors.sidebarText,
-                        fontSize: 13,
-                        fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                      ),
-                    ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: ListView.separated(
+                itemCount: items.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 2),
+                itemBuilder: (_, i) {
+                  final selected = selectedIndex == i;
+                  return _DevNavItem(
+                    icon: items[i].icon,
+                    label: items[i].label,
+                    selected: selected,
                     onTap: () => onItemTap(i),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
-          const Divider(color: Colors.white12, height: 1),
-          ListTile(
-            dense: true,
-            leading: const Icon(Icons.logout, color: Colors.red, size: 20),
-            title: const Text('Logout', style: TextStyle(color: Colors.red, fontSize: 13)),
-            onTap: onLogout,
+          Container(
+            height: 1,
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            color: Colors.white.withOpacity(0.06),
           ),
-          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10, 8, 10, 20),
+            child: _DevNavItem(
+              icon: Icons.logout_rounded,
+              label: 'Logout',
+              selected: false,
+              onTap: onLogout,
+              isDestructive: true,
+            ),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _DevNavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final bool isDestructive;
+
+  const _DevNavItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.isDestructive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final Color iconColor;
+    final Color textColor;
+
+    if (isDestructive) {
+      iconColor = const Color(0xFFFCA5A5);
+      textColor = const Color(0xFFFCA5A5);
+    } else if (selected) {
+      iconColor = const Color(0xFF34D399);
+      textColor = Colors.white;
+    } else {
+      iconColor = const Color(0xFF34D399).withOpacity(0.5);
+      textColor = const Color(0xFF34D399).withOpacity(0.5);
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: selected ? const Color(0xFF1A7A4A).withOpacity(0.2) : null,
+        borderRadius: BorderRadius.circular(10),
+        border: selected
+            ? Border.all(
+                color: const Color(0xFF34D399).withOpacity(0.15), width: 1)
+            : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 3,
+                  height: selected ? 20 : 0,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF34D399),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                  margin: EdgeInsets.only(right: selected ? 10 : 0),
+                ),
+                if (!selected) const SizedBox(width: 13),
+                Icon(icon, color: iconColor, size: 18),
+                const SizedBox(width: 10),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 13,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

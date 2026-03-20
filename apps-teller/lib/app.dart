@@ -8,6 +8,8 @@ import 'features/auth/presentation/pages/login_page.dart';
 import 'features/dashboard/presentation/pages/dashboard_page.dart';
 import 'injection_container.dart';
 
+const _mockLogin = bool.fromEnvironment('MOCK_LOGIN');
+
 class AppTellerRoot extends StatefulWidget {
   const AppTellerRoot({super.key});
 
@@ -22,7 +24,7 @@ class _AppTellerRootState extends State<AppTellerRoot> {
   void initState() {
     super.initState();
     _router = GoRouter(
-      initialLocation: '/login',
+      initialLocation: _mockLogin ? '/dashboard' : '/login',
       routes: [
         GoRoute(
           path: '/login',

@@ -3,43 +3,54 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // Primary
-  static const Color primary = Color(0xFF1565C0);
-  static const Color primaryDark = Color(0xFF003C8F);
-  static const Color primaryLight = Color(0xFF5E92F3);
+  // ─── Primary — Emerald Pesantren ────────────────────────────────────────────
+  static const Color primary = Color(0xFF1A7A4A);
+  static const Color primaryDark = Color(0xFF0C4A2B);
+  static const Color primaryLight = Color(0xFF2EA878);
+  static const Color primaryPale = Color(0xFFDCFCE7);
 
-  // Secondary
-  static const Color secondary = Color(0xFF0288D1);
-  static const Color secondaryDark = Color(0xFF005B9F);
-  static const Color secondaryLight = Color(0xFF5EB8FF);
+  // ─── Secondary ───────────────────────────────────────────────────────────────
+  static const Color secondary = Color(0xFF0284C7);
+  static const Color secondaryDark = Color(0xFF0369A1);
+  static const Color secondaryLight = Color(0xFF38BDF8);
 
-  // Semantic
-  static const Color success = Color(0xFF2E7D32);
-  static const Color warning = Color(0xFFF57F17);
-  static const Color error = Color(0xFFC62828);
-  static const Color info = Color(0xFF01579B);
+  // ─── Gold Accent ─────────────────────────────────────────────────────────────
+  static const Color gold = Color(0xFFC9A84C);
 
-  // Neutral
-  static const Color background = Color(0xFFF5F7FA);
+  // ─── Semantic ────────────────────────────────────────────────────────────────
+  static const Color success = Color(0xFF16A34A);
+  static const Color warning = Color(0xFFD97706);
+  static const Color error = Color(0xFFDC2626);
+  static const Color info = Color(0xFF0284C7);
+
+  // ─── Neutral ─────────────────────────────────────────────────────────────────
+  static const Color background = Color(0xFFF0FDF4);
   static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceVariant = Color(0xFFEEF2F8);
-  static const Color divider = Color(0xFFE0E0E0);
+  static const Color surfaceVariant = Color(0xFFDCFCE7);
+  static const Color divider = Color(0xFFD1FAE5);
 
-  // Text
-  static const Color textPrimary = Color(0xFF1A1A2E);
-  static const Color textSecondary = Color(0xFF6B7280);
-  static const Color textHint = Color(0xFF9CA3AF);
+  // ─── Text ────────────────────────────────────────────────────────────────────
+  static const Color textPrimary = Color(0xFF14532D);
+  static const Color textSecondary = Color(0xFF4B7C5F);
+  static const Color textHint = Color(0xFF86AB9A);
   static const Color textOnPrimary = Color(0xFFFFFFFF);
 
-  // Sidebar
-  static const Color sidebarBg = Color(0xFF0D2137);
-  static const Color sidebarActive = Color(0xFF1565C0);
-  static const Color sidebarText = Color(0xFFB0BEC5);
+  // ─── Sidebar ─────────────────────────────────────────────────────────────────
+  static const Color sidebarBg = Color(0xFF052E16);
+  static const Color sidebarActive = Color(0xFF1A7A4A);
+  static const Color sidebarText = Color(0xFF6EE7B7);
   static const Color sidebarTextActive = Color(0xFFFFFFFF);
 
-  // Status badge
-  static const Color statusAktif = Color(0xFF2E7D32);
-  static const Color statusPending = Color(0xFFF57F17);
-  static const Color statusDitolak = Color(0xFFC62828);
-  static const Color statusBlokir = Color(0xFF6D4C41);
+  // ─── Status Badge ────────────────────────────────────────────────────────────
+  static const Color statusAktif = Color(0xFF16A34A);
+  static const Color statusPending = Color(0xFFD97706);
+  static const Color statusDitolak = Color(0xFFDC2626);
+  static const Color statusBlokir = Color(0xFF6B7280);
+
+  // ─── Gradients ───────────────────────────────────────────────────────────────
+  static const LinearGradient headerGradient = LinearGradient(
+    colors: [Color(0xFF0C4A2B), Color(0xFF1A7A4A)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 }

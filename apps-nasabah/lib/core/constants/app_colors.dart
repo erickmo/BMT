@@ -3,37 +3,56 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // Primary — hijau Islam
-  static const Color primary = Color(0xFF1B5E20);
-  static const Color primaryLight = Color(0xFF4C8C4A);
-  static const Color primaryDark = Color(0xFF003300);
+  // ─── Primary — Emerald Pesantren ────────────────────────────────────────────
+  static const Color primary = Color(0xFF1A7A4A);
+  static const Color primaryDark = Color(0xFF0C4A2B);
+  static const Color primaryMid = Color(0xFF2EA878);
+  static const Color primaryLight = Color(0xFF4ADE80);
+  static const Color primaryPale = Color(0xFFDCFCE7);
 
-  // Secondary — emas
-  static const Color secondary = Color(0xFFFFC107);
-  static const Color secondaryLight = Color(0xFFFFD54F);
+  // ─── Gold Accent (Islamic) ───────────────────────────────────────────────────
+  static const Color gold = Color(0xFFC9A84C);
+  static const Color goldLight = Color(0xFFF0CB6B);
 
-  // Background
-  static const Color background = Color(0xFFF5F5F5);
+  // ─── Secondary ───────────────────────────────────────────────────────────────
+  static const Color secondary = Color(0xFFC9A84C);
+  static const Color secondaryLight = Color(0xFFF0CB6B);
+
+  // ─── Background ──────────────────────────────────────────────────────────────
+  static const Color background = Color(0xFFF0FDF4);
   static const Color surface = Color(0xFFFFFFFF);
   static const Color cardBg = Color(0xFFFFFFFF);
 
-  // Text
-  static const Color textPrimary = Color(0xFF212121);
-  static const Color textSecondary = Color(0xFF757575);
-  static const Color textHint = Color(0xFFBDBDBD);
+  // ─── Text ────────────────────────────────────────────────────────────────────
+  static const Color textPrimary = Color(0xFF14532D);
+  static const Color textSecondary = Color(0xFF4B7C5F);
+  static const Color textHint = Color(0xFF86AB9A);
   static const Color textOnPrimary = Color(0xFFFFFFFF);
 
-  // Status
-  static const Color success = Color(0xFF4CAF50);
-  static const Color error = Color(0xFFD32F2F);
-  static const Color warning = Color(0xFFFFA000);
-  static const Color info = Color(0xFF1976D2);
+  // ─── Status ──────────────────────────────────────────────────────────────────
+  static const Color success = Color(0xFF16A34A);
+  static const Color error = Color(0xFFDC2626);
+  static const Color warning = Color(0xFFD97706);
+  static const Color info = Color(0xFF0284C7);
 
-  // Border
-  static const Color border = Color(0xFFE0E0E0);
-  static const Color divider = Color(0xFFEEEEEE);
+  // ─── Border ──────────────────────────────────────────────────────────────────
+  static const Color border = Color(0xFFBBF7D0);
+  static const Color divider = Color(0xFFD1FAE5);
 
-  // Shimmer
-  static const Color shimmerBase = Color(0xFFE0E0E0);
-  static const Color shimmerHighlight = Color(0xFFF5F5F5);
+  // ─── Shimmer ─────────────────────────────────────────────────────────────────
+  static const Color shimmerBase = Color(0xFFD1FAE5);
+  static const Color shimmerHighlight = Color(0xFFECFDF5);
+
+  // ─── Gradients ───────────────────────────────────────────────────────────────
+  static const LinearGradient headerGradient = LinearGradient(
+    colors: [Color(0xFF0C4A2B), Color(0xFF1A7A4A)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient cardGradient = LinearGradient(
+    colors: [Color(0xFF1A7A4A), Color(0xFF2EA878)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 }
