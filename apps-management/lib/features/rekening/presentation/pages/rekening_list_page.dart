@@ -33,8 +33,11 @@ class RekeningListPage extends StatelessWidget {
                 const SizedBox(width: 12),
                 OutlinedButton.icon(
                   onPressed: () {},
-                  icon: const Icon(Icons.filter_list),
+                  icon: const Icon(Icons.filter_list, size: 16),
                   label: const Text('Filter'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 44),
+                  ),
                 ),
               ],
             ),

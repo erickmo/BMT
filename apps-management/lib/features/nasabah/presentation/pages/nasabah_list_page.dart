@@ -47,14 +47,16 @@ class _NasabahListPageState extends State<NasabahListPage> {
                 const SizedBox(width: 12),
                 OutlinedButton.icon(
                   onPressed: () {},
-                  icon: const Icon(Icons.filter_list),
+                  icon: const Icon(Icons.filter_list, size: 16),
                   label: const Text('Filter'),
+                  style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
                 ),
                 const SizedBox(width: 12),
                 ElevatedButton.icon(
                   onPressed: () {},
-                  icon: const Icon(Icons.file_download),
+                  icon: const Icon(Icons.file_download, size: 16),
                   label: const Text('Export'),
+                  style: ElevatedButton.styleFrom(minimumSize: const Size(0, 44)),
                 ),
               ],
             ),

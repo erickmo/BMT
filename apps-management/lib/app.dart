@@ -20,7 +20,7 @@ class AppManagement extends StatelessWidget {
         home: BlocBuilder<AuthBloc, AuthState>(
           builder: (context, state) {
             if (state is AuthAuthenticated) {
-              return const MainShell();
+              return MainShell(user: state.user);
             }
             return const LoginPage();
           },
