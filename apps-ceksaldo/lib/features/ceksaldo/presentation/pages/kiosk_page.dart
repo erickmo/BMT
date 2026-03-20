@@ -371,258 +371,329 @@ class _SaldoScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF052E16), Color(0xFF0A3D20)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 720;
+        return Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF052E16), Color(0xFF0A3D20)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: isMobile
+              ? _buildMobileLayout(context)
+              : _buildDesktopLayout(context),
+        );
+      },
+    );
+  }
+
+  Widget _buildMobileLayout(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 48, 20, 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Left: Saldo info ─────────────────────────────────────────────
-          Expanded(
-            flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.all(56),
+          _buildSaldoCard(mobile: true),
+          const SizedBox(height: 20),
+          _buildTransaksiPanel(mobile: true),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopLayout(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child: Padding(
+            padding: const EdgeInsets.all(56),
+            child: _buildSaldoCard(mobile: false),
+          ),
+        ),
+        Expanded(
+          flex: 3,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(0, 40, 40, 40),
+            child: _buildTransaksiPanel(mobile: false),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSaldoCard({required bool mobile}) {
+    return Column(
+      mainAxisAlignment:
+          mobile ? MainAxisAlignment.start : MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Avatar + nama
+        Row(
+          children: [
+            Container(
+              width: mobile ? 48 : 64,
+              height: mobile ? 48 : 64,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A7A4A).withOpacity(0.3),
+                shape: BoxShape.circle,
+                border: Border.all(
+                    color: AppColors.nfcRing.withOpacity(0.3), width: 1.5),
+              ),
+              child: Icon(Icons.person_rounded,
+                  size: mobile ? 24 : 32, color: AppColors.nfcRing),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Avatar
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1A7A4A).withOpacity(0.3),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                          color: AppColors.nfcRing.withOpacity(0.3),
-                          width: 1.5),
-                    ),
-                    child: const Icon(Icons.person_rounded,
-                        size: 32, color: AppColors.nfcRing),
-                  ),
-                  const SizedBox(height: 20),
                   Text(
                     saldoInfo.namaNasabah,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
-                      fontSize: 30,
+                      fontSize: mobile ? 18 : 30,
                       fontWeight: FontWeight.bold,
                       letterSpacing: -0.5,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 3),
                   Text(
                     saldoInfo.nomorRekening,
                     style: const TextStyle(
                       color: Color(0xFF6EE7B7),
-                      fontSize: 14,
+                      fontSize: 13,
                       fontFamily: 'monospace',
                       letterSpacing: 1,
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-                  const Text(
-                    'S A L D O',
-                    style: TextStyle(
-                      color: Color(0xFF6EE7B7),
-                      fontSize: 13,
-                      letterSpacing: 4,
-                      fontWeight: FontWeight.w300,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  ShaderMask(
-                    shaderCallback: (bounds) => const LinearGradient(
-                      colors: [Color(0xFF4ADE80), Color(0xFFC9A84C)],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ).createShader(bounds),
-                    child: Text(
-                      formatRupiah(saldoInfo.saldo),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 52,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: -1,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 48),
-                  // Countdown / reset button
-                  GestureDetector(
-                    onTap: onReset,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(
-                            color: Colors.white.withOpacity(0.15), width: 1),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.replay_rounded,
-                              color: Color(0xFF6EE7B7), size: 16),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Reset dalam ${countdown}s',
-                            style: const TextStyle(
-                              color: Color(0xFF6EE7B7),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
                   ),
                 ],
               ),
             ),
-          ),
+          ],
+        ),
+        SizedBox(height: mobile ? 24 : 40),
 
-          // ── Right: Transaction history ────────────────────────────────────
-          Expanded(
-            flex: 3,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(0, 40, 40, 40),
-              child: Container(
-                decoration: BoxDecoration(
+        // Saldo
+        Container(
+          width: double.infinity,
+          padding: mobile
+              ? const EdgeInsets.all(20)
+              : EdgeInsets.zero,
+          decoration: mobile
+              ? BoxDecoration(
                   color: Colors.white.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                       color: Colors.white.withOpacity(0.08), width: 1),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: AppColors.nfcRing,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.nfcRing.withOpacity(0.5),
-                                  blurRadius: 6,
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          const Text(
-                            '5 Transaksi Terakhir',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                        height: 1,
-                        color: Colors.white.withOpacity(0.06)),
-                    Expanded(
-                      child: ListView.separated(
-                        padding: const EdgeInsets.all(0),
-                        itemCount:
-                            saldoInfo.transaksiTerakhir.length,
-                        separatorBuilder: (_, __) => Container(
-                          height: 1,
-                          color: Colors.white.withOpacity(0.06),
-                        ),
-                        itemBuilder: (_, i) {
-                          final tx =
-                              saldoInfo.transaksiTerakhir[i];
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 18),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    color: tx.isKredit
-                                        ? AppColors.positif
-                                            .withOpacity(0.1)
-                                        : AppColors.negatif
-                                            .withOpacity(0.1),
-                                    borderRadius:
-                                        BorderRadius.circular(10),
-                                  ),
-                                  child: Icon(
-                                    tx.isKredit
-                                        ? Icons.arrow_downward_rounded
-                                        : Icons.arrow_upward_rounded,
-                                    color: tx.isKredit
-                                        ? AppColors.positif
-                                        : AppColors.negatif,
-                                    size: 18,
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        tx.keterangan,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: 14,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        formatTanggalWaktu(tx.tanggal),
-                                        style: const TextStyle(
-                                          color: Color(0xFF6EE7B7),
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Text(
-                                  '${tx.isKredit ? '+' : '-'} ${formatRupiah(tx.nominal)}',
-                                  style: TextStyle(
-                                    color: tx.isKredit
-                                        ? AppColors.positif
-                                        : AppColors.negatif,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
+                )
+              : null,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'S A L D O',
+                style: TextStyle(
+                  color: Color(0xFF6EE7B7),
+                  fontSize: 12,
+                  letterSpacing: 4,
+                  fontWeight: FontWeight.w300,
                 ),
               ),
+              const SizedBox(height: 8),
+              ShaderMask(
+                shaderCallback: (bounds) => const LinearGradient(
+                  colors: [Color(0xFF4ADE80), Color(0xFFC9A84C)],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ).createShader(bounds),
+                child: Text(
+                  formatRupiah(saldoInfo.saldo),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: mobile ? 34 : 52,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: -1,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: mobile ? 20 : 48),
+
+        // Countdown / reset
+        GestureDetector(
+          onTap: onReset,
+          child: Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                  color: Colors.white.withOpacity(0.15), width: 1),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.replay_rounded,
+                    color: Color(0xFF6EE7B7), size: 15),
+                const SizedBox(width: 7),
+                Text(
+                  'Reset dalam ${countdown}s',
+                  style: const TextStyle(
+                    color: Color(0xFF6EE7B7),
+                    fontSize: 13,
+                  ),
+                ),
+              ],
             ),
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTransaksiPanel({required bool mobile}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(20),
+        border:
+            Border.all(color: Colors.white.withOpacity(0.08), width: 1),
+      ),
+      child: Column(
+        mainAxisSize: mobile ? MainAxisSize.min : MainAxisSize.max,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    color: AppColors.nfcRing,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.nfcRing.withOpacity(0.5),
+                        blurRadius: 6,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Text(
+                  '5 Transaksi Terakhir',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(height: 1, color: Colors.white.withOpacity(0.06)),
+          // List transaksi
+          if (saldoInfo.transaksiTerakhir.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Center(
+                child: Text(
+                  'Belum ada transaksi',
+                  style: TextStyle(
+                      color: Colors.white.withOpacity(0.4), fontSize: 14),
+                ),
+              ),
+            )
+          else
+            ...List.generate(saldoInfo.transaksiTerakhir.length, (i) {
+              final tx = saldoInfo.transaksiTerakhir[i];
+              final isLast = i == saldoInfo.transaksiTerakhir.length - 1;
+              return Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 14),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: tx.isKredit
+                                ? AppColors.positif.withOpacity(0.12)
+                                : AppColors.negatif.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            tx.isKredit
+                                ? Icons.arrow_downward_rounded
+                                : Icons.arrow_upward_rounded,
+                            color: tx.isKredit
+                                ? AppColors.positif
+                                : AppColors.negatif,
+                            size: 17,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                tx.keterangan,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 13,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                formatTanggalWaktu(tx.tanggal),
+                                style: const TextStyle(
+                                  color: Color(0xFF6EE7B7),
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${tx.isKredit ? '+' : '-'} ${formatRupiah(tx.nominal)}',
+                          style: TextStyle(
+                            color: tx.isKredit
+                                ? AppColors.positif
+                                : AppColors.negatif,
+                            fontWeight: FontWeight.bold,
+                            fontSize: mobile ? 13 : 15,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (!isLast)
+                    Container(
+                        height: 1,
+                        color: Colors.white.withOpacity(0.05)),
+                ],
+              );
+            }),
         ],
       ),
     );
