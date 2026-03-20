@@ -10,7 +10,6 @@ class Validators {
 
   static String? password(String? value) {
     if (value == null || value.isEmpty) return 'Password tidak boleh kosong';
-    if (value.length < 8) return 'Password minimal 8 karakter';
     return null;
   }
 
