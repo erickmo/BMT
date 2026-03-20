@@ -121,6 +121,7 @@ type Repository interface {
 	GetByNomor(ctx context.Context, nomor string) (*Rekening, error)
 	ListByNasabah(ctx context.Context, nasabahID uuid.UUID) ([]*Rekening, error)
 	ListByBMT(ctx context.Context, bmtID, cabangID uuid.UUID, page, perPage int) ([]*Rekening, int64, error)
+	ListDepositoAktif(ctx context.Context, bmtID uuid.UUID) ([]*Rekening, error)
 	UpdateSaldo(ctx context.Context, id uuid.UUID, saldoBaru int64) error
 	UpdateStatus(ctx context.Context, id uuid.UUID, status StatusRekening, alasan string) error
 	LockForUpdate(ctx context.Context, id uuid.UUID) (*Rekening, error)

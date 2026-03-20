@@ -115,7 +115,6 @@ func main() {
 
 	// Suppress unused variable warnings for repos not yet used by handlers
 	_ = formRepo
-	_ = pembiayaanRepo
 	_ = santriRepo
 	_ = kelasRepo
 	_ = pengajarRepo
@@ -149,6 +148,10 @@ func main() {
 		akuntansiService,
 	)
 	autodebetService := service.NewAutodebetService(autodebetRepo, rekeningService)
+	tunggakanService := service.NewTunggakanService(autodebetRepo, rekeningService)
+	kolektibilitasService := service.NewKolektibilitasService(pembiayaanRepo)
+	distribusiService := service.NewDistribusiService(rekeningRepo, rekeningService, settingsResolver)
+	reminderService := service.NewReminderService(pembiayaanRepo, settingsResolver)
 	nasabahService := service.NewNasabahService(nasabahRepo, rekeningRepo)
 	sesiTellerService := service.NewSesiTellerService(sesiTellerRepo, settingsResolver)
 	featureChecker := service.NewPlatformFeatureChecker(platformRepo)
@@ -158,11 +161,13 @@ func main() {
 	formService := service.NewFormService(formRepo, nasabahRepo, rekeningRepo, settingsResolver)
 	_ = service.NewSettingsService(settingsResolver)
 	_ = featureChecker
+	_ = tunggakanService
 
 	// ── Workers ───────────────────────────────────────────────────────────────
 	asynqRedisOpt := asynq.RedisClientOpt{Addr: redisOpts.Addr, Password: redisOpts.Password}
 
 	autodebetWorker := worker.NewAutodebetWorker(autodebetService)
+	cbsWorker := worker.NewCBSWorker(kolektibilitasService, distribusiService, reminderService)
 
 	asynqServer := asynq.NewServer(
 		asynqRedisOpt,
@@ -177,7 +182,7 @@ func main() {
 	)
 
 	mux := asynq.NewServeMux()
-	worker.RegisterWorkers(mux, autodebetWorker)
+	worker.RegisterWorkers(mux, autodebetWorker, cbsWorker)
 
 	go func() {
 		log.Info().Msg("Starting asynq worker server")

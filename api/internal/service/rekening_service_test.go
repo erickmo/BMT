@@ -115,6 +115,14 @@ func (m *MockRekeningRepo) GenerateNomorRekening(ctx context.Context, bmtID, cab
 	return args.String(0), args.Error(1)
 }
 
+func (m *MockRekeningRepo) ListDepositoAktif(ctx context.Context, bmtID uuid.UUID) ([]*rekening.Rekening, error) {
+	args := m.Called(ctx, bmtID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*rekening.Rekening), args.Error(1)
+}
+
 // ── Mock: autodebet.Repository ────────────────────────────────────────────────
 
 type MockAutodebetRepo struct {
@@ -136,6 +144,14 @@ func (m *MockAutodebetRepo) GetConfig(ctx context.Context, id uuid.UUID) (*autod
 
 func (m *MockAutodebetRepo) ListConfigByRekening(ctx context.Context, rekeningID uuid.UUID) ([]*autodebet.Config, error) {
 	args := m.Called(ctx, rekeningID)
+	return args.Get(0).([]*autodebet.Config), args.Error(1)
+}
+
+func (m *MockAutodebetRepo) ListConfigAktifByBMT(ctx context.Context, bmtID uuid.UUID) ([]*autodebet.Config, error) {
+	args := m.Called(ctx, bmtID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
 	return args.Get(0).([]*autodebet.Config), args.Error(1)
 }
 

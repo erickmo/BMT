@@ -133,6 +133,7 @@ type ListPembiayaanFilter struct {
 type Repository interface {
 	Create(ctx context.Context, p *Pembiayaan) error
 	GetByID(ctx context.Context, id uuid.UUID) (*Pembiayaan, error)
+	ListAktifByBMT(ctx context.Context, bmtID uuid.UUID) ([]*Pembiayaan, error)
 	GetByNomor(ctx context.Context, nomor string) (*Pembiayaan, error)
 	List(ctx context.Context, filter ListPembiayaanFilter) ([]*Pembiayaan, int64, error)
 	Update(ctx context.Context, p *Pembiayaan) error

@@ -85,6 +85,7 @@ type Repository interface {
 	CreateConfig(ctx context.Context, c *Config) error
 	GetConfig(ctx context.Context, id uuid.UUID) (*Config, error)
 	ListConfigByRekening(ctx context.Context, rekeningID uuid.UUID) ([]*Config, error)
+	ListConfigAktifByBMT(ctx context.Context, bmtID uuid.UUID) ([]*Config, error)
 	UpdateConfig(ctx context.Context, c *Config) error
 
 	CreateJadwal(ctx context.Context, j *Jadwal) error

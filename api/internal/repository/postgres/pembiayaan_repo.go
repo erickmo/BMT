@@ -274,6 +274,32 @@ func (r *PembiayaanRepository) ListBeasiswaRiwayat(ctx context.Context, pembiaya
 	return result, nil
 }
 
+func (r *PembiayaanRepository) ListAktifByBMT(ctx context.Context, bmtID uuid.UUID) ([]*pembiayaan.Pembiayaan, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT id, bmt_id, cabang_id, nasabah_id, produk_pembiayaan_id, nomor_pembiayaan,
+		akad, pokok, margin_persen, nisbah_nasabah, jangka_bulan, angsuran_per_bulan, total_kewajiban,
+		ada_beasiswa, beasiswa_persen, beasiswa_nominal, beasiswa_sumber, beasiswa_ditetapkan_oleh, beasiswa_ditetapkan_at,
+		status, kolektibilitas, hari_tunggak, saldo_pokok, saldo_margin,
+		created_at, updated_at, created_by, updated_by, is_voided
+		FROM pembiayaan
+		WHERE bmt_id = $1 AND status = 'AKTIF' AND is_voided = false
+	`, bmtID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []*pembiayaan.Pembiayaan
+	for rows.Next() {
+		p, err := r.scanPembiayaan(rows)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, p)
+	}
+	return result, nil
+}
+
 func (r *PembiayaanRepository) scanPembiayaan(s scanner) (*pembiayaan.Pembiayaan, error) {
 	p := &pembiayaan.Pembiayaan{}
 	err := s.Scan(&p.ID, &p.BMTID, &p.CabangID, &p.NasabahID, &p.ProdukPembiayaanID, &p.NomorPembiayaan,

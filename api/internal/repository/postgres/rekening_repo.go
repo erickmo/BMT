@@ -276,6 +276,32 @@ func (r *RekeningRepository) UpdateJenis(ctx context.Context, jr *rekening.Jenis
 	return err
 }
 
+func (r *RekeningRepository) ListDepositoAktif(ctx context.Context, bmtID uuid.UUID) ([]*rekening.Rekening, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT r.id, r.bmt_id, r.cabang_id, r.nasabah_id, r.jenis_rekening_id,
+		r.nomor_rekening, r.saldo, r.status, r.alasan_blokir, r.biaya_admin_bulanan,
+		r.nominal_deposito, r.nisbah_nasabah, r.tanggal_buka, r.tanggal_jatuh_tempo,
+		r.tanggal_tutup, r.created_at, r.updated_at, r.created_by_form_id
+		FROM rekening r
+		JOIN jenis_rekening jr ON jr.id = r.jenis_rekening_id
+		WHERE r.bmt_id = $1 AND r.status = 'AKTIF' AND jr.tipe_dasar = 'DEPOSITO'
+	`, bmtID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []*rekening.Rekening
+	for rows.Next() {
+		rek, err := r.scanRekening(rows)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, rek)
+	}
+	return result, nil
+}
+
 func (r *RekeningRepository) scanRekening(s scanner) (*rekening.Rekening, error) {
 	rek := &rekening.Rekening{}
 	var saldo int64

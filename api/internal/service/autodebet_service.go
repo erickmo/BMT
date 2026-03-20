@@ -83,6 +83,44 @@ func HitungTanggalJatuhTempo(bulan time.Time, tanggal int) time.Time {
 	return time.Date(bulan.Year(), bulan.Month(), hari, 0, 0, 0, 0, bulan.Location())
 }
 
+// EksekusiBulanan menjalankan autodebet untuk BMT tertentu pada tanggal hari ini.
+// Merupakan alias EksekusiHarian untuk digunakan oleh worker bulanan.
+func (s *AutodebetService) EksekusiBulanan(ctx context.Context, bmtID uuid.UUID) error {
+	return s.EksekusiHarian(ctx, bmtID, time.Now())
+}
+
+// GenerateJadwalBulanDepan membuat jadwal autodebet bulan depan untuk semua rekening aktif BMT.
+// Berbeda dengan GenerateJadwalBulanan yang memerlukan rekeningIDs eksplisit.
+func (s *AutodebetService) GenerateJadwalBulanDepan(ctx context.Context, bmtID uuid.UUID) error {
+	configs, err := s.autodebetRepo.ListConfigAktifByBMT(ctx, bmtID)
+	if err != nil {
+		return fmt.Errorf("gagal ambil config autodebet BMT %s: %w", bmtID, err)
+	}
+
+	now := time.Now()
+	bulanDepan := time.Date(now.Year(), now.Month()+1, 1, 0, 0, 0, 0, now.Location())
+
+	for _, cfg := range configs {
+		tanggal := HitungTanggalJatuhTempo(bulanDepan, int(cfg.TanggalDebet))
+		jadwal := &domainAutodebet.Jadwal{
+			ID:                uuid.New(),
+			BMTID:             bmtID,
+			RekeningID:        cfg.RekeningID,
+			ConfigID:          cfg.ID,
+			Jenis:             cfg.Jenis,
+			NominalTarget:     0,
+			TanggalJatuhTempo: tanggal,
+			Status:            domainAutodebet.StatusMenunggu,
+			CreatedAt:         time.Now(),
+		}
+		if err := s.autodebetRepo.CreateJadwal(ctx, jadwal); err != nil {
+			fmt.Printf("gagal buat jadwal autodebet rekening %s: %v\n", cfg.RekeningID, err)
+		}
+	}
+
+	return nil
+}
+
 // EksekusiHarian menjalankan semua jadwal autodebet untuk hari ini.
 // Menggunakan partial debit: jika saldo tidak cukup, debit semampu saldo,
 // sisanya dicatat sebagai tunggakan.

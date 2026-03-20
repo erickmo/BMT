@@ -45,6 +45,7 @@ type PayloadAutodebetHarian struct {
 	Tanggal time.Time `json:"tanggal"`
 }
 
+// AutodebetWorker menangani task autodebet harian, bulanan, dan generate jadwal.
 type AutodebetWorker struct {
 	autodebetService *service.AutodebetService
 }
@@ -58,8 +59,15 @@ func (w *AutodebetWorker) HandleAutodebetHarian(ctx context.Context, t *asynq.Ta
 	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
 		return fmt.Errorf("gagal unmarshal payload: %w", err)
 	}
-
 	return w.autodebetService.EksekusiHarian(ctx, payload.BMTID, payload.Tanggal)
+}
+
+func (w *AutodebetWorker) HandleAutodebetBulanan(ctx context.Context, t *asynq.Task) error {
+	var payload PayloadBMT
+	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
+		return fmt.Errorf("gagal unmarshal payload: %w", err)
+	}
+	return w.autodebetService.EksekusiBulanan(ctx, payload.BMTID)
 }
 
 func (w *AutodebetWorker) HandleGenerateJadwal(ctx context.Context, t *asynq.Task) error {
@@ -67,18 +75,78 @@ func (w *AutodebetWorker) HandleGenerateJadwal(ctx context.Context, t *asynq.Tas
 	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
 		return fmt.Errorf("gagal unmarshal payload: %w", err)
 	}
+	return w.autodebetService.GenerateJadwalBulanDepan(ctx, payload.BMTID)
+}
 
-	// Generate jadwal untuk bulan depan.
-	// RekeningIDs kosong karena GenerateJadwalBulanan perlu di-populate oleh caller
-	// dengan semua rekening aktif milik BMT tersebut.
-	bulanDepan := time.Now().AddDate(0, 1, 0)
-	return w.autodebetService.GenerateJadwalBulanan(ctx, []uuid.UUID{}, payload.BMTID, bulanDepan)
+// CBSWorker menangani task CBS: kolektibilitas, distribusi bagi hasil, reminder angsuran.
+type CBSWorker struct {
+	kolektibilitasSvc *service.KolektibilitasService
+	distribusiSvc     *service.DistribusiService
+	reminderSvc       *service.ReminderService
+}
+
+func NewCBSWorker(
+	kolektibilitasSvc *service.KolektibilitasService,
+	distribusiSvc *service.DistribusiService,
+	reminderSvc *service.ReminderService,
+) *CBSWorker {
+	return &CBSWorker{
+		kolektibilitasSvc: kolektibilitasSvc,
+		distribusiSvc:     distribusiSvc,
+		reminderSvc:       reminderSvc,
+	}
+}
+
+// HandleUpdateKolektibilitas mengklasifikasikan ulang kolektibilitas semua pembiayaan aktif BMT.
+// Payload: { "bmt_id": "..." }
+func (w *CBSWorker) HandleUpdateKolektibilitas(ctx context.Context, t *asynq.Task) error {
+	var payload PayloadBMT
+	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
+		return fmt.Errorf("gagal unmarshal payload: %w", err)
+	}
+	return w.kolektibilitasSvc.UpdateBMT(ctx, payload.BMTID)
+}
+
+// HandleDistribusiBagiHasil mendistribusikan bagi hasil deposito akhir bulan.
+// Dijalankan scheduler pada 28–31 bulan, worker mengecek apakah hari ini adalah hari terakhir bulan.
+func (w *CBSWorker) HandleDistribusiBagiHasil(ctx context.Context, t *asynq.Task) error {
+	var payload PayloadBMT
+	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
+		return fmt.Errorf("gagal unmarshal payload: %w", err)
+	}
+
+	now := time.Now()
+	// Hanya jalankan pada hari terakhir bulan
+	besok := now.AddDate(0, 0, 1)
+	if besok.Month() == now.Month() {
+		return nil // bukan hari terakhir bulan
+	}
+
+	hasil, err := w.distribusiSvc.DistribusiBagiHasil(ctx, payload.BMTID, now)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("[DistribusiBagiHasil] BMT %s: %d rekening diproses\n", payload.BMTID, len(hasil))
+	return nil
+}
+
+// HandleReminderAngsuran mengirim reminder H-N ke nasabah yang angsurannya akan jatuh tempo.
+func (w *CBSWorker) HandleReminderAngsuran(ctx context.Context, t *asynq.Task) error {
+	var payload PayloadBMT
+	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
+		return fmt.Errorf("gagal unmarshal payload: %w", err)
+	}
+	return w.reminderSvc.ReminderAngsuranBMT(ctx, payload.BMTID)
 }
 
 // RegisterWorkers mendaftarkan semua task handlers ke ServeMux.
-func RegisterWorkers(mux *asynq.ServeMux, autodebetWorker *AutodebetWorker) {
+func RegisterWorkers(mux *asynq.ServeMux, autodebetWorker *AutodebetWorker, cbsWorker *CBSWorker) {
 	mux.HandleFunc(TaskAutodebetHarian, autodebetWorker.HandleAutodebetHarian)
+	mux.HandleFunc(TaskAutodebetBulanan, autodebetWorker.HandleAutodebetBulanan)
 	mux.HandleFunc(TaskGenerateJadwal, autodebetWorker.HandleGenerateJadwal)
+	mux.HandleFunc(TaskUpdateKolektibilitas, cbsWorker.HandleUpdateKolektibilitas)
+	mux.HandleFunc(TaskDistribusiBagiHasil, cbsWorker.HandleDistribusiBagiHasil)
+	mux.HandleFunc(TaskReminderAngsuran, cbsWorker.HandleReminderAngsuran)
 }
 
 // SchedulePeriodicTasks mendaftarkan semua cron jobs ke Scheduler.
